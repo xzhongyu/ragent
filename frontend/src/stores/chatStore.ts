@@ -8,6 +8,7 @@ import {
   deleteSession as deleteSessionRequest,
   renameSession as renameSessionRequest
 } from "@/services/sessionService";
+import type { ConversationMessageVO, ConversationVO } from "@/services/sessionService";
 import { stopTask, submitFeedback } from "@/services/chatService";
 import { buildQuery } from "@/utils/helpers";
 import { createStreamResponse } from "@/hooks/useStreamResponse";
@@ -69,6 +70,15 @@ function computeThinkingDuration(startAt?: number | null) {
   return Math.max(1, seconds);
 }
 
+function unwrapArrayData<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const value = (payload as { data?: unknown }).data;
+    if (Array.isArray(value)) return value as T[];
+  }
+  return [];
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -89,8 +99,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   fetchSessions: async () => {
     set({ isLoading: true });
     try {
-      const data = await listSessions();
-      const sessions = data
+      const payload = await listSessions();
+      const sessions = unwrapArrayData<ConversationVO>(payload)
         .map((item) => ({
         id: item.conversationId,
         title: item.title || "新对话",
@@ -178,11 +188,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       thinkingStartAt: null
     });
     try {
-      const data = await listMessages(sessionId);
+      const payload = await listMessages(sessionId);
       if (get().currentSessionId !== sessionId) {
         return;
       }
-      const mapped: Message[] = data.map((item) => ({
+      const mapped: Message[] = unwrapArrayData<ConversationMessageVO>(payload).map((item) => ({
         id: String(item.id),
         role: item.role === "assistant" ? "assistant" : "user",
         content: item.content,
