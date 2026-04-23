@@ -49,7 +49,9 @@
       "Bash(mvn test-compile:*)",
       "Bash(wc:*)",
       "Bash(lark-cli docs:*)",
-      "Bash(lark-cli auth:*)"
+      "Bash(lark-cli auth:*)",
+      "Bash(ln:*)",
+      "Bash(awk '{print $1}')"
     ]
   }
 }
